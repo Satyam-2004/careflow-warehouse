@@ -15,5 +15,51 @@ services:
       timeout: 5s
       retries: 10
 
+  pipeline:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://careflow:careflow@postgres:5432/careflow
+      PYTHONPATH: /app/src
+    volumes:
+      - ./output:/app/output
+    command: python src/pipeline.py
+
+  dashboard:
+    build: .
+    profiles: ["dashboard"]
+    depends_on:
+      pipeline:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://careflow:careflow@postgres:5432/careflow
+    ports:
+      - "8501:8501"
+    command: streamlit run app/dashboard.py --server.address 0.0.0.0 --server.port 8501
+
+  airflow:
+    image: apache/airflow:2.10.4
+    profiles: ["airflow"]
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      DATABASE_URL: postgresql://careflow:careflow@postgres:5432/careflow
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./sql:/opt/airflow/sql
+      - ./data:/opt/airflow/data
+      - ./output:/opt/airflow/output
+    ports:
+      - "8080:8080"
+    command: airflow standalone
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   careflow_pg:
