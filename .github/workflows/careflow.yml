@@ -1,0 +1,41 @@
+name: careflow
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt pytest
+      - run: PYTHONPATH=src pytest
+  warehouse:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: careflow
+          POSTGRES_PASSWORD: careflow
+          POSTGRES_DB: careflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U careflow -d careflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: python src/generate_raw.py
+      - run: python src/pipeline.py
+        env:
+          DATABASE_URL: postgresql://careflow:careflow@localhost:5432/careflow
+          PYTHONPATH: src
