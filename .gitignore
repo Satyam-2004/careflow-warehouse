@@ -2,5 +2,4 @@
 __pycache__/
 *.pyc
 data/careflow.db
-data/raw/*.csv
-output/
+.pytest_cache/
