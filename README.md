@@ -51,5 +51,3 @@ Rejection mix: orphan patient 226, missing discharge 200, unknown diagnosis 189,
 - Built a full-refresh ELT pipeline on 7,127 synthetic encounter rows: typed extract, quarantine, and a star schema (`fact_encounter`, patient, diagnosis, payer).
 - Defined length of stay and a 30-day readmission flag in SQL with window functions; index readmission was 9.34% across 5,287 non-expired discharges.
 - Quarantined 798 rows (missing discharge, orphan patients, duplicate keys, invalid charges) and blocked promotion unless fact-table integrity checks returned zero.
-
-GitHub link goes on the title line once the repo is public.
